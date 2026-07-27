@@ -42,16 +42,6 @@ gcc -O2 -s -o hygp.exe hygp.c   # Windows (MinGW)
 make hygp                        # or use the Makefile
 ```
 
-### Python (via uv)
-
-```sh
-uv run python -m hygp rg foo
-uv tool install .
-hybrid-grep rg foo
-```
-
-Python 3.8+ required.
-
 ## License
 
 MIT

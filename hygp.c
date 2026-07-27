@@ -12,6 +12,8 @@
   #include <sys/wait.h>
 #endif
 
+int _CRT_glob = 0;
+
 static size_t MAX_CHARS = 1000;
 
 static void init_max_chars(void) {
@@ -30,12 +32,13 @@ static const char *HELP =
     "Usage:\n"
     "  hygp rg <args>              run ripgrep\n"
     "  hygp sg <args>              run ast-grep\n"
+    "  hygp fd <args>              run fd\n"
     "  hygp read|cat|print <file>  read file with output cap\n"
     "  hygp sed <file> <n> [<m>]   print file from line n to m\n"
-    "  hygp map [<path>]           directory tree up to depth 2 (fd)\n"
-    "  hygp find <pattern>         search file paths by name/pattern (fd)\n"
     "  hygp outline <file>         extract function/class signatures (ast-grep)\n"
-    "  hygp diff [<file>]          show modified git diff patch\n"
+    "  hygp diff [<file>]          git diff (read-only)\n"
+    "  hygp blame <file>           git blame (read-only)\n"
+    "  hygp log [<args>]           git log (read-only)\n"
     "\n";
 
 static const char *HINT_RG =
@@ -46,14 +49,16 @@ static const char *HINT_FILE =
     "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: try 'hygp sed <file> <line> <line>'. Stay focused, you can find it!\n";
 static const char *HINT_SED =
     "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: try 'hygp rg' or 'hygp sg'. Don't give up, refine the target!\n";
-static const char *HINT_MAP =
-    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: use 'hygp map <subfolder>' to narrow down or 'hygp find <pattern>' for specific files.\n";
-static const char *HINT_FIND =
-    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: refine your pattern or use 'hygp map <dir>'.\n";
+static const char *HINT_FD =
+    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: narrow down with path or glob pattern.\n";
 static const char *HINT_OUTLINE =
     "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: use 'hygp rg' to search for specific methods or 'hygp sed' for line ranges.\n";
 static const char *HINT_DIFF =
     "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: use 'hygp diff <file>' to inspect a single file or 'hygp sed' on modified lines.\n";
+static const char *HINT_BLAME =
+    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: use 'hygp blame <file> <start>' for a smaller range.\n";
+static const char *HINT_LOG =
+    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: use 'hygp log --oneline -<n>' for a shorter log.\n";
 
 static int is_read(const char *s) {
     return !strcmp(s, "read") || !strcmp(s, "cat") || !strcmp(s, "print");
@@ -201,21 +206,6 @@ static void read_lines(const char *path, int start, int end) {
     if (truncated) printf(HINT_SED, MAX_CHARS, total);
 }
 
-static void cmd_map(const char *path) {
-    if (path) {
-        char *args[] = {"fd", "--max-depth", "2", "--color", "never", (char*)path, NULL};
-        run_cmd(args, 6, HINT_MAP);
-    } else {
-        char *args[] = {"fd", "--max-depth", "2", "--color", "never", NULL};
-        run_cmd(args, 5, HINT_MAP);
-    }
-}
-
-static void cmd_find(const char *pattern) {
-    char *args[] = {"fd", "--glob", (char*)pattern, "--color", "never", NULL};
-    run_cmd(args, 5, HINT_FIND);
-}
-
 static void cmd_outline(const char *file) {
     char *args[] = {"ast-grep", "outline", (char*)file, "--color", "never", NULL};
     run_cmd(args, 5, HINT_OUTLINE);
@@ -229,6 +219,19 @@ static void cmd_diff(const char *file) {
         char *args[] = {"git", "diff", "--color=never", NULL};
         run_cmd(args, 3, HINT_DIFF);
     }
+}
+
+static void cmd_blame(const char *file) {
+    char *args[] = {"git", "blame", (char*)file, NULL};
+    run_cmd(args, 3, HINT_BLAME);
+}
+
+static void cmd_log(int argc, char **argv) {
+    char *args[256]; int n = 0;
+    args[n++] = "git"; args[n++] = "log";
+    for (int i = 2; i < argc && n < 255; i++) args[n++] = argv[i];
+    args[n] = NULL;
+    run_cmd(args, n, HINT_LOG);
 }
 
 int main(int argc, char **argv) {
@@ -283,17 +286,6 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (!strcmp(cmd, "map")) {
-        cmd_map(argc > 2 ? argv[2] : NULL);
-        return 0;
-    }
-
-    if (!strcmp(cmd, "find")) {
-        if (argc < 3) { fprintf(stderr, "error: usage: hygp find <pattern>\n"); return 1; }
-        cmd_find(argv[2]);
-        return 0;
-    }
-
     if (!strcmp(cmd, "outline")) {
         if (argc < 3) { fprintf(stderr, "error: usage: hygp outline <file>\n"); return 1; }
         cmd_outline(argv[2]);
@@ -305,6 +297,17 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+    if (!strcmp(cmd, "blame")) {
+        if (argc < 3) { fprintf(stderr, "error: usage: hygp blame <file>\n"); return 1; }
+        cmd_blame(argv[2]);
+        return 0;
+    }
+
+    if (!strcmp(cmd, "log")) {
+        cmd_log(argc, argv);
+        return 0;
+    }
+
     const char *hint = NULL;
     if (!strcmp(cmd, "rg")) {
         hint = HINT_RG;
@@ -312,6 +315,9 @@ int main(int argc, char **argv) {
     } else if (!strcmp(cmd, "sg") || !strcmp(cmd, "ast-grep")) {
         hint = HINT_SG;
         argv[1] = "ast-grep";
+    } else if (!strcmp(cmd, "fd")) {
+        hint = HINT_FD;
+        argv[1] = "fd";
     } else {
         fprintf(stderr, "unknown command: %s\n%s", cmd, HELP);
         return 1;
