@@ -9,6 +9,7 @@
   #define pclose _pclose
 #else
   #include <unistd.h>
+  #include <sys/wait.h>
 #endif
 
 static size_t MAX_CHARS = 1000;
@@ -123,7 +124,11 @@ static void run_cmd(char **args, int argc, const char *hint) {
     while ((ch = fgetc(p)) != EOF) total++;
     cap(out, total > MAX_CHARS, hint, total);
     int rc = pclose(p);
-    if (rc) exit(rc);
+#ifndef _WIN32
+    if (rc == -1) exit(1);
+    if (rc && WIFEXITED(rc)) rc = WEXITSTATUS(rc);
+#endif
+    if (rc > 1) exit(rc);
 }
 
 static void read_file(const char *path) {
