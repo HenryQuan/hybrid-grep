@@ -34,7 +34,7 @@ HYGP_MAX_CHARS=500 hygp rg pattern
 
 ### Binary (C, ~25 KB)
 
-Download from [releases](https://github.com/anomalyco/hybrid-grep/releases) or build:
+Download from [releases](https://github.com/henryquan/hybrid-grep/releases) or build:
 
 ```sh
 gcc -O2 -s -o hygp hygp.c       # Linux/macOS
