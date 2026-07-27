@@ -1,15 +1,8 @@
-import os
-import sys
-import subprocess
-import shutil
+import os, sys, subprocess, shutil
 
-MAX_CHARS = int(os.environ.get("HYGP_MAX_CHARS", 1000))
-
-BINARIES = {
-    "rg": "rg",
-    "sg": "ast-grep",
-    "ast-grep": "ast-grep",
-}
+MAX_CHARS = int(os.environ.get("HYGP_MAX_CHARS") or 1000)
+BIN = {"rg": "rg", "sg": "ast-grep", "ast-grep": "ast-grep"}
+READ = {"read", "cat", "print"}
 
 HELP = """\
 hybrid-grep: wrapper around ripgrep and ast-grep
@@ -33,93 +26,58 @@ Short alias: hygp
 HINT = "\n... output truncated at {} chars; refine your search to be more precise"
 
 
-def truncate_output(out):
-    if len(out) > MAX_CHARS:
-        print(out[:MAX_CHARS], end="")
-        print(HINT.format(MAX_CHARS))
-    else:
-        print(out, end="")
+def cap(s):
+    if len(s) > MAX_CHARS:
+        s = s[:MAX_CHARS] + HINT.format(MAX_CHARS)
+    sys.stdout.write(s)
 
 
-def read_file(path):
-    with open(path, "r", encoding="utf-8", errors="replace") as f:
-        truncate_output(f.read())
+def open_err(path):
+    try:
+        return open(path, encoding="utf-8", errors="replace")
+    except (FileNotFoundError, IsADirectoryError, PermissionError) as e:
+        sys.exit(f"error: {e}")
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help", "/?"):
+    a = sys.argv
+    if len(a) < 2 or a[1] in ("-h", "--help", "/?"):
         print(HELP)
         return
 
-    cmd = sys.argv[1]
+    cmd = a[1]
 
-    if cmd in ("read", "cat", "print"):
-        if len(sys.argv) < 3:
-            print("error: missing file path", file=sys.stderr)
-            sys.exit(1)
-        try:
-            read_file(sys.argv[2])
-        except FileNotFoundError:
-            print(f"error: file not found: {sys.argv[2]}", file=sys.stderr)
-            sys.exit(1)
-        except IsADirectoryError:
-            print(f"error: is a directory: {sys.argv[2]}", file=sys.stderr)
-            sys.exit(1)
-        except PermissionError:
-            print(f"error: permission denied: {sys.argv[2]}", file=sys.stderr)
-            sys.exit(1)
-        return
+    if cmd in READ:
+        if len(a) < 3:
+            sys.exit("error: missing file path")
+        with open_err(a[2]) as f:
+            cap(f.read())
 
-    if cmd == "sed":
-        if len(sys.argv) < 4:
-            print("error: usage: hygp sed <file> <n> [<m>]", file=sys.stderr)
-            sys.exit(1)
-        path = sys.argv[2]
+    elif cmd == "sed":
+        if len(a) < 4:
+            sys.exit("error: usage: hygp sed <file> <n> [<m>]")
         try:
-            start = int(sys.argv[3])
-            end = int(sys.argv[4]) if len(sys.argv) > 4 else None
+            start = int(a[3])
+            end = int(a[4]) if len(a) > 4 else None
         except ValueError:
-            print("error: line numbers must be integers", file=sys.stderr)
-            sys.exit(1)
-        try:
-            with open(path, "r", encoding="utf-8", errors="replace") as f:
-                lines = f.readlines()
-        except FileNotFoundError:
-            print(f"error: file not found: {path}", file=sys.stderr)
-            sys.exit(1)
-        except IsADirectoryError:
-            print(f"error: is a directory: {path}", file=sys.stderr)
-            sys.exit(1)
-        selected = lines[start - 1:end]
-        truncate_output("".join(selected))
-        return
+            sys.exit("error: line numbers must be integers")
+        if start < 1:
+            sys.exit("error: start line must be >= 1")
+        with open_err(a[2]) as f:
+            cap("".join(f.readlines()[start - 1:end]))
 
-    binary_name = BINARIES.get(cmd)
-    if not binary_name:
-        print(f"unknown command: {cmd}", file=sys.stderr)
-        print(HELP, file=sys.stderr)
-        sys.exit(1)
-
-    binary = shutil.which(binary_name)
-    if not binary:
-        print(f"error: {binary_name} not found on PATH", file=sys.stderr)
-        sys.exit(1)
-
-    proc = subprocess.run(
-        [binary] + sys.argv[2:],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-
-    out = proc.stdout.decode("utf-8", errors="replace")
-    err = proc.stderr.decode("utf-8", errors="replace")
-
-    truncate_output(out)
-
-    if err:
-        print(err, file=sys.stderr, end="")
-
-    sys.exit(proc.returncode)
+    else:
+        name = BIN.get(cmd)
+        if not name:
+            sys.exit(f"unknown command: {cmd}\n{HELP}")
+        bin_path = shutil.which(name)
+        if not bin_path:
+            sys.exit(f"error: {name} not found on PATH")
+        proc = subprocess.run([bin_path] + a[2:], capture_output=True)
+        cap(proc.stdout.decode("utf-8", errors="replace"))
+        if proc.stderr:
+            print(proc.stderr.decode("utf-8", errors="replace"), file=sys.stderr, end="")
+        sys.exit(proc.returncode)
 
 
 if __name__ == "__main__":
