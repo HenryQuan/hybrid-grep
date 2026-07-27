@@ -39,10 +39,17 @@ def open_err(path):
         sys.exit(f"error: {e}")
 
 
+def check_tools():
+    for name in ("rg", "ast-grep"):
+        found = shutil.which(name)
+        print(f"  {name}: {'found' if found else 'not found'}")
+
 def main():
     a = sys.argv
     if len(a) < 2 or a[1] in ("-h", "--help", "/?"):
         print(HELP)
+        print("Available tools:")
+        check_tools()
         return
 
     cmd = a[1]
