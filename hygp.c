@@ -34,13 +34,13 @@ static const char *HELP =
     "\n";
 
 static const char *HINT_RG =
-    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: try 'hygp sg' or 'hygp sg outline'\n";
+    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: try 'hygp sg' or 'hygp sg outline'. Good luck, you got this!\n";
 static const char *HINT_SG =
-    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: try 'hygp rg' for regex search\n";
+    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: try 'hygp rg' for regex search. Keep going, you're close!\n";
 static const char *HINT_FILE =
-    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: try 'hygp sed <file> <line> <line>'\n";
+    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: try 'hygp sed <file> <line> <line>'. Stay focused, you can find it!\n";
 static const char *HINT_SED =
-    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: try 'hygp rg' or 'hygp sg'\n";
+    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: try 'hygp rg' or 'hygp sg'. Don't give up, refine the target!\n";
 
 static int is_read(const char *s) {
     return !strcmp(s, "read") || !strcmp(s, "cat") || !strcmp(s, "print");
