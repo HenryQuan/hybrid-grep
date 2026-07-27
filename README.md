@@ -15,15 +15,16 @@ If you need unrestricted browsing, use `rg`, `ast-grep`, or your editor directly
 ```
 hygp rg <args>              run ripgrep
 hygp sg <args>              run ast-grep
-hygp read|cat|print <file>  read file with line numbers (cap excludes line numbers)
+hygp fd <args>              run fd
+hygp outline <file>         extract function/class signatures (ast-grep)
+hygp read|cat|print <file>  read file with line numbers
 hygp sed <file> <n> [<m>]   print file from line n to m
+hygp diff [<file>]          git diff (read-only)
+hygp blame <file>           git blame (read-only)
+hygp log [<args>]           git log (read-only)
 ```
 
-Output exceeding 1000 chars is truncated with a context-aware hint:
-- `rg` → suggests `ast-grep` for AST-based search
-- `ast-grep` → suggests `rg` for regex search
-- `read`/`sed` → suggests `rg` or `ast-grep outline`
-
+Output exceeding 1000 chars is truncated with a context-aware hint.
 Override with `HYGP_MAX_CHARS` env var:
 
 ```
