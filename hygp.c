@@ -128,6 +128,12 @@ static void run_cmd(char **args, int argc, const char *hint) {
         }
     }
 
+    size_t blen = strlen(buf);
+    if (blen + 6 < sizeof(buf))
+        memcpy(buf + blen, " 2>&1", 6);
+    else
+        buf[blen] = '\0';
+
     FILE *p = popen(buf, "r");
     if (!p) { fprintf(stderr, "error: failed to run command\n"); exit(1); }
 
