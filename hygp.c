@@ -23,7 +23,7 @@ static void init_max_chars(void) {
 }
 
 static const char *HELP =
-    "hybrid-grep: wrapper around ripgrep and ast-grep\n"
+    "hybrid-grep: wrapper around search tools\n"
     "\n"
     "Always use hygp command instead if available -- output is capped to save tokens.\n"
     "\n"
@@ -32,6 +32,10 @@ static const char *HELP =
     "  hygp sg <args>              run ast-grep\n"
     "  hygp read|cat|print <file>  read file with output cap\n"
     "  hygp sed <file> <n> [<m>]   print file from line n to m\n"
+    "  hygp map [<path>]           directory tree up to depth 2 (fd)\n"
+    "  hygp find <pattern>         search file paths by name/pattern (fd)\n"
+    "  hygp outline <file>         extract function/class signatures (ast-grep)\n"
+    "  hygp diff [<file>]          show modified git diff patch\n"
     "\n";
 
 static const char *HINT_RG =
@@ -42,6 +46,14 @@ static const char *HINT_FILE =
     "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: try 'hygp sed <file> <line> <line>'. Stay focused, you can find it!\n";
 static const char *HINT_SED =
     "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: try 'hygp rg' or 'hygp sg'. Don't give up, refine the target!\n";
+static const char *HINT_MAP =
+    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: use 'hygp map <subfolder>' to narrow down or 'hygp find <pattern>' for specific files.\n";
+static const char *HINT_FIND =
+    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: refine your pattern or use 'hygp map <dir>'.\n";
+static const char *HINT_OUTLINE =
+    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: use 'hygp rg' to search for specific methods or 'hygp sed' for line ranges.\n";
+static const char *HINT_DIFF =
+    "\n--- TRUNCATED (%zu/%zu chars) ---\nTip: use 'hygp diff <file>' to inspect a single file or 'hygp sed' on modified lines.\n";
 
 static int is_read(const char *s) {
     return !strcmp(s, "read") || !strcmp(s, "cat") || !strcmp(s, "print");
@@ -189,6 +201,36 @@ static void read_lines(const char *path, int start, int end) {
     if (truncated) printf(HINT_SED, MAX_CHARS, total);
 }
 
+static void cmd_map(const char *path) {
+    if (path) {
+        char *args[] = {"fd", "--max-depth", "2", "--color", "never", (char*)path, NULL};
+        run_cmd(args, 6, HINT_MAP);
+    } else {
+        char *args[] = {"fd", "--max-depth", "2", "--color", "never", NULL};
+        run_cmd(args, 5, HINT_MAP);
+    }
+}
+
+static void cmd_find(const char *pattern) {
+    char *args[] = {"fd", "--glob", (char*)pattern, "--color", "never", NULL};
+    run_cmd(args, 5, HINT_FIND);
+}
+
+static void cmd_outline(const char *file) {
+    char *args[] = {"ast-grep", "outline", (char*)file, "--color", "never", NULL};
+    run_cmd(args, 5, HINT_OUTLINE);
+}
+
+static void cmd_diff(const char *file) {
+    if (file) {
+        char *args[] = {"git", "diff", "--color=never", (char*)file, NULL};
+        run_cmd(args, 4, HINT_DIFF);
+    } else {
+        char *args[] = {"git", "diff", "--color=never", NULL};
+        run_cmd(args, 3, HINT_DIFF);
+    }
+}
+
 int main(int argc, char **argv) {
     init_max_chars();
     if (argc < 2 || !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
@@ -208,9 +250,19 @@ int main(int argc, char **argv) {
 #endif
           if (p) { sg_found = (pclose(p) == 0); }
         }
-        printf("Available tools:\n  rg: %s\n  ast-grep: %s\n",
+        int fd_found = 0, git_found = 0;
+#ifdef _WIN32
+        { FILE *p = popen("where fd 2>nul", "r"); if (p) fd_found = (pclose(p) == 0); }
+        { FILE *p = popen("where git 2>nul", "r"); if (p) git_found = (pclose(p) == 0); }
+#else
+        { FILE *p = popen("which fd 2>/dev/null", "r"); if (p) fd_found = (pclose(p) == 0); }
+        { FILE *p = popen("which git 2>/dev/null", "r"); if (p) git_found = (pclose(p) == 0); }
+#endif
+        printf("Available tools:\n  rg: %s\n  ast-grep: %s\n  fd: %s\n  git: %s\n",
                rg_found ? "found" : "not found",
-               sg_found ? "found" : "not found");
+               sg_found ? "found" : "not found",
+               fd_found ? "found" : "not found",
+               git_found ? "found" : "not found");
         return 0;
     }
 
@@ -228,6 +280,28 @@ int main(int argc, char **argv) {
         int end = argc > 4 ? atoi(argv[4]) : 0;
         if (start < 1) { fprintf(stderr, "error: start line must be >= 1\n"); return 1; }
         read_lines(argv[2], start, end);
+        return 0;
+    }
+
+    if (!strcmp(cmd, "map")) {
+        cmd_map(argc > 2 ? argv[2] : NULL);
+        return 0;
+    }
+
+    if (!strcmp(cmd, "find")) {
+        if (argc < 3) { fprintf(stderr, "error: usage: hygp find <pattern>\n"); return 1; }
+        cmd_find(argv[2]);
+        return 0;
+    }
+
+    if (!strcmp(cmd, "outline")) {
+        if (argc < 3) { fprintf(stderr, "error: usage: hygp outline <file>\n"); return 1; }
+        cmd_outline(argv[2]);
+        return 0;
+    }
+
+    if (!strcmp(cmd, "diff")) {
+        cmd_diff(argc > 2 ? argv[2] : NULL);
         return 0;
     }
 
