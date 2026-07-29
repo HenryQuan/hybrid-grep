@@ -43,6 +43,18 @@ gcc -O2 -s -o hygp.exe hygp.c   # Windows (MinGW)
 make hygp                        # or use the Makefile
 ```
 
+## PI
+
+Pi agent extensions that enforce the same discipline at the tool level:
+
+| File | Purpose |
+|------|---------|
+| `enforce-hygp.ts` | Removes `read`/`grep`/`find`/`ls` from pi toolset — model can't call them |
+| `bash-cap.ts` | Caps ALL bash output at `HYGP_MAX_CHARS` (default 1000), same format as `hygp.c` |
+| `APPEND_SYSTEM.md` | Appends hygp rules to system prompt as a text-level reminder |
+
+Without these, the model may still use built-in tools like `read` or run `cat`/`rg`/`grep` directly, bypassing `hygp`'s capping. The extensions remove the tools entirely and cap all bash output regardless of command.
+
 ## License
 
 MIT
