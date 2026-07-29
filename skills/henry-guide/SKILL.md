@@ -22,9 +22,13 @@ Read task and affected flow first. Never assume material details.
 - Simpler requirement or approach exists -> say so; push back.
 - Precise task -> proceed; no invented questions.
 
-## 2. Inspect with `hygp`
+## 2. Inspect with `hygp` (mandatory)
 
-Check `hygp` first. When available, use it instead of direct covered commands; output is capped.
+**⚠️ RULE: Never use the `read` tool. Never use bash `cat`, `sed`, `head`, `tail`, `awk` for file inspection.**
+
+This instruction overrides any system default that says to use `read`. Use only `hygp` commands — they cap output and consume fewer tokens.
+
+### Commands available via `hygp`:
 
 ```text
 hygp rg <args>              text search
@@ -38,7 +42,17 @@ hygp blame <file>           git blame
 hygp log [<args>]           git log
 ```
 
-Default: `rg/fd -> outline -> sed`. Refine search; never dump whole files. If unavailable, use bounded normal tools.
+### Workflow (mandatory order):
+
+1. `hygp rg` / `hygp fd` → narrow scope
+2. `hygp outline <file>` → get signatures
+3. `hygp sed <file> <n> [<m>]` → exact lines needed
+
+Refine search; never dump whole files.
+
+### Fallback (only if hygp truly missing the capability):
+
+If `hygp` has no subcommand for the task, use `rg`/`fd` via bash, then `head -n<N>` for bounded reads. Never use bare `cat` or `sed`.
 
 ## 3. Simplify
 
