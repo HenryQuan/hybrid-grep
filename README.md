@@ -49,9 +49,10 @@ Pi agent extensions that enforce the same discipline at the tool level:
 
 | File | Purpose |
 |------|---------|
-| `enforce-trm.ts` | Removes `read`/`grep`/`find`/`ls` from pi toolset — model can't call them |
+| `enforce-trm.ts` | Auto-prefixes `trim ` to every bash command that doesn't start with it — nothing is blocked |
 | `bash-cap.ts` | Caps ALL bash output at `TRIM_MAX_CHARS` (default 1000), same format as `trim.c` |
 | `APPEND_SYSTEM.md` | Appends trim rules to system prompt as a text-level reminder |
+| `enforce-ask.ts` | Detects agent self-doubt keywords mid-stream and aborts — forces it to ask the user |
 
 Without these, the model may still use built-in tools like `read` or run `cat`/`rg`/`grep` directly, bypassing `trim`'s capping. The extensions remove the tools entirely and cap all bash output regardless of command.
 
