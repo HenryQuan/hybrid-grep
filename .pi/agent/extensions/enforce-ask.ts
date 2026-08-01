@@ -1,8 +1,8 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-// Enforce henry-guide 1.2 mechanically: if the agent streams self-doubt
-// (hesitation words) instead of stopping to ask, abort the turn and hand
-// control back to the user. Tune the marker list below.
+// Enforce henry-guide 1.2 mechanically with two detectors:
+// 1) self-doubt keywords mid-stream -> abort the turn
+// 2) text request ("print/explain/...") answered with a tool call -> abort
 
 const CONFUSION_MARKERS = [
   "i'm not sure",
@@ -23,11 +23,34 @@ const CONFUSION_MARKERS = [
   "i don't know",
 ];
 
+// Prompts that ask for an answer in text — the agent should reply, not run tools.
+const TEXT_REQUEST_RE = /(^|\b)(print|explain|describe|list|say|answer|tell|summarize|how|what|why)\b/i;
+
 export default function (pi: ExtensionAPI) {
   let abortedThisTurn = false;
+  let sawToolCallThisTurn = false;
+  let textRequestTurn = false;
 
-  pi.on("turn_start", () => {
+  pi.on("before_agent_start", (event) => {
     abortedThisTurn = false;
+    sawToolCallThisTurn = false;
+    textRequestTurn = TEXT_REQUEST_RE.test(event.prompt ?? "");
+  });
+
+  pi.on("tool_call", async (event, ctx) => {
+    if (abortedThisTurn) return;
+    if (sawToolCallThisTurn) return;
+    sawToolCallThisTurn = true;
+
+    // User asked for an answer; first move is a tool call -> wrong path.
+    if (!textRequestTurn) return;
+
+    abortedThisTurn = true;
+    await ctx.abort();
+    ctx.ui.notify(
+      `User asked for an answer — agent reached for a tool (${event.toolName}). Answer in text instead.`,
+      "error"
+    );
   });
 
   pi.on("message_update", async (event, ctx) => {
