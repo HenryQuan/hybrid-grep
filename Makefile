@@ -1,12 +1,18 @@
 CC = gcc
 CFLAGS = -O2 -s
 
-hygp: hygp.c
+trim: trim.c
 	$(CC) $(CFLAGS) -o $@ $^
 
-hygp.exe: hygp.c
+trim.exe: trim.c
+	$(CC) $(CFLAGS) -o $@ $^
+
+trm: trim.c
+	$(CC) $(CFLAGS) -o $@ $^
+
+trm.exe: trim.c
 	$(CC) $(CFLAGS) -o $@ $^
 
 .PHONY: clean
 clean:
-	rm -f hygp hygp.exe
+	rm -f trim trim.exe trm trm.exe

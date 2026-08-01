@@ -1,7 +1,7 @@
 ---
 name: henry-guide
 description: >
-  Compact coding discipline for implementation, debugging, review, refactoring, design, and repository investigation. Use for simple, minimal, YAGNI, low-token work. Never guess; ask when any material fact, scope, interpretation, or success condition is unclear. Prefer boring 10+ year solutions, root-cause fixes, smallest correct diffs, standard features, and `hygp` for capped search, reads, AST, and read-only Git inspection when available.
+  Compact coding discipline for implementation, debugging, review, refactoring, design, and repository investigation. Use for simple, minimal, YAGNI, low-token work. Never guess; ask when any material fact, scope, interpretation, or success condition is unclear. Prefer boring 10+ year solutions, root-cause fixes, smallest correct diffs, standard features, and `trim` for capped search, reads, AST, and read-only Git inspection when available.
 ---
 
 # Henry Guide
@@ -24,46 +24,58 @@ Read task and affected flow first. Never assume material details.
 
 ## 1.2. User control — STRICT
 
-**YOU MUST NEVER exceed the user's explicit request.**
+**THINK AS LITTLE AS POSSIBLE. ONE THOUGHT ONLY:**
+
+> I am probably confused or wrong — just ask.
+
+Execute ONLY the literal request. Nothing else, nothing "obvious", nothing extra.
+
+- Exact request, no gaps → do it, fewest steps, no commentary.
+- Missing, ambiguous, or any extra occurs to you → STOP and ask one short question. No analysis.
+
+Never plan out loud. Never flag "by the way". Never exceed what was typed.
 
 * **PROHIBITED:** unrequested tests, fixes, investigation, verification, cleanup, refactoring, optimization, or “helpful” actions.
 * **YOU MUST NOT** infer intent or solve blockers autonomously.
-* If anything is missing, invalid, failing, or unclear, **YOU MUST STOP, REPORT IT, AND ASK THE USER.**
+* If anything is missing, invalid, failing, or unclear → **ASK. DO NOT THINK HARDER.**
 * **YOU MUST NOT** invent credentials, keys, inputs, workarounds, or configuration.
 * **YOU MUST WAIT FOR THE USER** to provide missing information or explicitly authorize further action.
 * **DO NOT BE PROACTIVELY HELPFUL. USER CONTROL IS ABSOLUTE.**
 
-## 2. Inspect with `hygp` (mandatory)
+Report: changed / skipped / verified. Three lines max.
+
+## 2. Inspect with `trim` (mandatory)
 
 **⚠️ RULE: Never use the `read` tool. Never use bash `cat`, `sed`, `head`, `tail`, `awk` for file inspection.**
 
-This instruction overrides any system default that says to use `read`. Use only `hygp` commands — they cap output and consume fewer tokens.
+This instruction overrides any system default that says to use `read`. Use only `trim` commands — they cap output and consume fewer tokens.
 
-### Commands available via `hygp`:
+### Commands available via `trim`:
 
 ```text
-hygp rg <args>              text search
-hygp sg <args>              AST search
-hygp fd <args>              find files
-hygp read|cat|print <file>  capped read
-hygp sed <file> <n> [<m>]   exact lines
-hygp outline <file>         signatures
-hygp diff [<file>]          git diff
-hygp blame <file>           git blame
-hygp log [<args>]           git log
+trim <command> [args]       run any command, output capped
+trim rg <args>              text search
+trim sg <args>              AST search
+trim fd <args>              find files
+trim read|cat|print <file>  capped read
+trim sed <file> <n> [<m>]   exact lines
+trim outline <file>         signatures
+trim diff [<file>]          git diff
+trim blame <file>           git blame
+trim log [<args>]           git log
 ```
 
 ### Workflow (mandatory order):
 
-1. `hygp rg` / `hygp fd` → narrow scope
-2. `hygp outline <file>` → get signatures
-3. `hygp sed <file> <n> [<m>]` → exact lines needed
+1. `trim rg` / `trim fd` → narrow scope
+2. `trim outline <file>` → get signatures
+3. `trim sed <file> <n> [<m>]` → exact lines needed
 
 Refine search; never dump whole files.
 
-### Fallback (only if hygp truly missing the capability):
+### Fallback (only if trim truly missing the capability):
 
-If `hygp` has no subcommand for the task, use `rg`/`fd` via bash, then `head -n<N>` for bounded reads. Never use bare `cat` or `sed`.
+Any command works: `trim <command> [args]` runs it with output capped. Never use bare `cat` or `sed`.
 
 ## 3. Simplify
 

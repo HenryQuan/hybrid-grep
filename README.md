@@ -1,46 +1,46 @@
-# hybrid-grep
+# trim
 
-Capped-output wrappers for `rg` (ripgrep), `ast-grep`, and file reading — designed for coding agents, not humans.
+Capped-output wrapper around any command — designed for coding agents, not humans.
 
 ## Why
 
 Useful for bug fixing and code search, but intentionally limits information to save tokens and avoid context degradation during long agent runs. A human developer doesn't read an entire file before fixing a bug, coding agents shouldn't either.
 
-`hybrid-grep` caps output at 1000 characters per call, forcing agents to search precisely instead of dumping entire files. This saves tokens, reduces noise, and keeps the context window focused over long sessions.
+`trim` caps output at 1000 characters per call, forcing agents to search precisely instead of dumping entire files. This saves tokens, reduces noise, and keeps the context window focused over long sessions.
 
-If you need unrestricted browsing, use `rg`, `ast-grep`, or your editor directly. This tool is built for coding agents.
+If you need unrestricted browsing, run commands directly. This tool is built for coding agents.
 
 ## Usage
 
 ```
-hygp rg <args>              run ripgrep
-hygp sg <args>              run ast-grep
-hygp fd <args>              run fd
-hygp outline <file>         extract function/class signatures (ast-grep)
-hygp read|cat|print <file>  read file with line numbers
-hygp sed <file> <n> [<m>]   print file from line n to m
-hygp diff [<file>]          git diff (read-only)
-hygp blame <file>           git blame (read-only)
-hygp log [<args>]           git log (read-only)
+trim rg <args>              run ripgrep
+trim sg <args>              run ast-grep
+trim fd <args>              run fd
+trim outline <file>         extract function/class signatures (ast-grep)
+trim diff [<file>]          git diff (read-only)
+trim blame <file>           git blame (read-only)
+trim log [<args>]           git log (read-only)
+trim read|cat|print <file>  read file with output cap
+trim sed <file> <n> [<m>]   print file from line n to m
+trim <command> [args]       run ANY command, output capped
 ```
 
-Output exceeding 1000 chars is truncated with a context-aware hint.
-Override with `HYGP_MAX_CHARS` env var:
+`trim` is a generic wrapper: any command not listed above is run as-is with capped output. Shorthands are convenience mappings — `trim diff` becomes `git diff`, `trim sg` becomes `ast-grep`, and so on. `trm` is a shorter alias for `trim`.
 
 ```
-HYGP_MAX_CHARS=500 hygp rg pattern
+TRIM_MAX_CHARS=500 trim rg pattern
 ```
 
 ## Install
 
 ### Binary (C, ~25 KB)
 
-Download from [releases](https://github.com/henryquan/hybrid-grep/releases) or build:
+Download from [releases](https://github.com/henryquan/trim/releases) or build:
 
 ```sh
-gcc -O2 -s -o hygp hygp.c       # Linux/macOS
-gcc -O2 -s -o hygp.exe hygp.c   # Windows (MinGW)
-make hygp                        # or use the Makefile
+gcc -O2 -s -o trim trim.c       # Linux/macOS
+gcc -O2 -s -o trim.exe trim.c   # Windows (MinGW)
+make trim                        # or use the Makefile
 ```
 
 ## PI
@@ -49,11 +49,11 @@ Pi agent extensions that enforce the same discipline at the tool level:
 
 | File | Purpose |
 |------|---------|
-| `enforce-hygp.ts` | Removes `read`/`grep`/`find`/`ls` from pi toolset — model can't call them |
-| `bash-cap.ts` | Caps ALL bash output at `HYGP_MAX_CHARS` (default 1000), same format as `hygp.c` |
-| `APPEND_SYSTEM.md` | Appends hygp rules to system prompt as a text-level reminder |
+| `enforce-trm.ts` | Removes `read`/`grep`/`find`/`ls` from pi toolset — model can't call them |
+| `bash-cap.ts` | Caps ALL bash output at `TRIM_MAX_CHARS` (default 1000), same format as `trim.c` |
+| `APPEND_SYSTEM.md` | Appends trim rules to system prompt as a text-level reminder |
 
-Without these, the model may still use built-in tools like `read` or run `cat`/`rg`/`grep` directly, bypassing `hygp`'s capping. The extensions remove the tools entirely and cap all bash output regardless of command.
+Without these, the model may still use built-in tools like `read` or run `cat`/`rg`/`grep` directly, bypassing `trim`'s capping. The extensions remove the tools entirely and cap all bash output regardless of command.
 
 ## License
 

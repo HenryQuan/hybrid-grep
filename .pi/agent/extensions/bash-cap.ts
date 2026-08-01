@@ -1,11 +1,11 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-// Matches hygp.c behavior exactly: character-based, env-configurable, same hint format
+// Matches trim.c behavior exactly: character-based, env-configurable, same hint format
 const DEFAULT_MAX_CHARS = 1000;
 const MAX_BUFFER = 65536;
 
 function getMaxChars(): number {
-  const env = process.env.HYGP_MAX_CHARS;
+  const env = process.env.TRIM_MAX_CHARS;
   if (env) {
     const v = parseInt(env, 10);
     if (v > 0) return Math.min(v, MAX_BUFFER);
@@ -28,7 +28,7 @@ export default function (pi: ExtensionAPI) {
 
     if (totalChars <= MAX_CHARS) return;
 
-    content.text = `${text.slice(0, MAX_CHARS)}\n--- TRUNCATED (${MAX_CHARS}/${totalChars} chars) ---\nTip: refine with more precise query.\n`;
+    content.text = `${text.slice(0, MAX_CHARS)}\n--- TRUNCATED (${MAX_CHARS}/${totalChars} chars) ---\nTip: refine further -- narrow the query or use a more specific command.\n`;
 
     return { content: [content] };
   });

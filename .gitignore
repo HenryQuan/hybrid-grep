@@ -6,5 +6,7 @@ build/
 dist/
 *.egg-info/
 *.exe
-hygp
-hygp.exe
+trim
+trim.exe
+trm
+trm.exe
