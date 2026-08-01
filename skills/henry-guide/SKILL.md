@@ -22,6 +22,17 @@ Read task and affected flow first. Never assume material details.
 - Simpler requirement or approach exists -> say so; push back.
 - Precise task -> proceed; no invented questions.
 
+## 1.2. User control — STRICT
+
+**YOU MUST NEVER exceed the user's explicit request.**
+
+* **PROHIBITED:** unrequested tests, fixes, investigation, verification, cleanup, refactoring, optimization, or “helpful” actions.
+* **YOU MUST NOT** infer intent or solve blockers autonomously.
+* If anything is missing, invalid, failing, or unclear, **YOU MUST STOP, REPORT IT, AND ASK THE USER.**
+* **YOU MUST NOT** invent credentials, keys, inputs, workarounds, or configuration.
+* **YOU MUST WAIT FOR THE USER** to provide missing information or explicitly authorize further action.
+* **DO NOT BE PROACTIVELY HELPFUL. USER CONTROL IS ABSOLUTE.**
+
 ## 2. Inspect with `hygp` (mandatory)
 
 **⚠️ RULE: Never use the `read` tool. Never use bash `cat`, `sed`, `head`, `tail`, `awk` for file inspection.**
