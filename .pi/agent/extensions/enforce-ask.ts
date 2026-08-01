@@ -7,6 +7,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 const CONFUSION_MARKERS = [
   "i'm not sure",
   "i am not sure",
+  "can't be sure",
   "not sure whether",
   "not sure if",
   "unsure",

@@ -28,6 +28,8 @@ Read task and affected flow first. Never assume material details.
 
 > I am probably confused or wrong — just ask.
 
+When in doubt: reply with exactly "I am not sure." and stop. You will be cut off — that is the point.
+
 Execute ONLY the literal request. Nothing else, nothing "obvious", nothing extra.
 
 - Exact request, no gaps → do it, fewest steps, no commentary.
