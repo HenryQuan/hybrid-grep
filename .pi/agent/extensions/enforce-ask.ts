@@ -57,35 +57,25 @@ export default function (pi: ExtensionAPI) {
     if (event.toolName === "write" || event.toolName === "edit") {
       if (questionTurn) {
         abortedThisTurn = true;
-        await ctx.abort();
-        ctx.ui.notify(
-          `User asked a question — answer in text, don't ${event.toolName}.`,
-          "error"
-        );
-        return;
+        ctx.abort();
+        return { block: true, reason: `User asked a question — answer in text, don't ${event.toolName}.` };
       }
       if (!hasActionKeyword) {
         abortedThisTurn = true;
-        await ctx.abort();
-        ctx.ui.notify(
-          `No action keyword in prompt — ask before ${event.toolName}.`,
-          "error"
-        );
-        return;
+        ctx.abort();
+        return { block: true, reason: `No action keyword in prompt — ask before ${event.toolName}.` };
       }
     }
 
     // Detector 2: first tool call on a text request.
-    if (sawToolCallThisTurn) return;
-    sawToolCallThisTurn = true;
-    if (!textRequestTurn) return;
-
-    abortedThisTurn = true;
-    await ctx.abort();
-    ctx.ui.notify(
-      `User asked for an answer — agent reached for a tool (${event.toolName}). Answer in text instead.`,
-      "error"
-    );
+    if (!sawToolCallThisTurn) {
+      sawToolCallThisTurn = true;
+      if (textRequestTurn) {
+        abortedThisTurn = true;
+        ctx.abort();
+        return { block: true, reason: `User asked for an answer — agent reached for a tool (${event.toolName}). Answer in text instead.` };
+      }
+    }
   });
 
   pi.on("message_update", async (event, ctx) => {
