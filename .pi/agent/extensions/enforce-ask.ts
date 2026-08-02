@@ -1,8 +1,10 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-// Enforce henry-guide 1.2 mechanically with two detectors:
+// Enforce henry-guide 1.2 mechanically with four detectors:
 // 1) self-doubt keywords mid-stream -> abort the turn
 // 2) text request ("print/explain/...") answered with a tool call -> abort
+// 3) question prompt -> block write/edit (answer in text)
+// 4) no action keyword in prompt -> block write/edit (must ask first)
 
 const CONFUSION_MARKERS = [
   "i'm not sure",
@@ -26,23 +28,56 @@ const CONFUSION_MARKERS = [
 // Prompts that ask for an answer in text — the agent should reply, not run tools.
 const TEXT_REQUEST_RE = /(^|\b)(print|explain|describe|list|say|answer|tell|summarize|how|what|why)\b/i;
 
+// Questions — user is asking, not requesting a change. Block write/edit.
+const QUESTION_RE = /(^|\b)(why|what|where|how|who|which|can you|could you|will you|would you|is it|are there|are you|did you|do you|should i|should we)\b/i;
+
+// Action keywords — user explicitly wants changes. Required for write/edit.
+const ACTION_RE = /(^|\b)(update|change|modify|edit|do|go|fix|add|create|remove|delete|scaffold|make|implement|build|rename|move|refactor|rewrite|replace|patch)\b/i;
+
 export default function (pi: ExtensionAPI) {
   let abortedThisTurn = false;
   let sawToolCallThisTurn = false;
   let textRequestTurn = false;
+  let questionTurn = false;
+  let hasActionKeyword = false;
 
   pi.on("before_agent_start", (event) => {
+    const prompt = event.prompt ?? "";
     abortedThisTurn = false;
     sawToolCallThisTurn = false;
-    textRequestTurn = TEXT_REQUEST_RE.test(event.prompt ?? "");
+    textRequestTurn = TEXT_REQUEST_RE.test(prompt);
+    questionTurn = QUESTION_RE.test(prompt);
+    hasActionKeyword = ACTION_RE.test(prompt);
   });
 
   pi.on("tool_call", async (event, ctx) => {
     if (abortedThisTurn) return;
+
+    // Detector 3+4: block write/edit on questions or missing action keyword.
+    if (event.toolName === "write" || event.toolName === "edit") {
+      if (questionTurn) {
+        abortedThisTurn = true;
+        await ctx.abort();
+        ctx.ui.notify(
+          `User asked a question — answer in text, don't ${event.toolName}.`,
+          "error"
+        );
+        return;
+      }
+      if (!hasActionKeyword) {
+        abortedThisTurn = true;
+        await ctx.abort();
+        ctx.ui.notify(
+          `No action keyword in prompt — ask before ${event.toolName}.`,
+          "error"
+        );
+        return;
+      }
+    }
+
+    // Detector 2: first tool call on a text request.
     if (sawToolCallThisTurn) return;
     sawToolCallThisTurn = true;
-
-    // User asked for an answer; first move is a tool call -> wrong path.
     if (!textRequestTurn) return;
 
     abortedThisTurn = true;
